@@ -1,0 +1,15 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-json
+        exclude: "replik8s-snapshot-.*"
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+  - repo: https://github.com/clj-kondo/clj-kondo
+    rev: v2024.05.24
+    hooks:
+      - id: clj-kondo
+        args:
+          - "--cache"
+          - "false"
