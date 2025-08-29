@@ -1,0 +1,37 @@
+name: CI
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4.7.1
+        with:
+          distribution: corretto
+          java-version: 21
+
+      - name: Cache Clojure deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gitlibs
+            ~/.m2/repository
+          key: ${{ runner.os }}-deps-${{ hashFiles('deps.edn') }}
+          restore-keys: |
+            ${{ runner.os }}-deps-
+
+      - name: Install clojure tools
+        uses: DeLaGuardo/setup-clojure@13.4
+        with:
+          cli: latest
+
+      - name: Run cljfmt check
+        run: clojure -M:cljfmt check
+
+      - name: Run tests
+        run: clojure -X:test
