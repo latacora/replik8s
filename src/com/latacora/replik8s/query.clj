@@ -265,11 +265,11 @@
          ;; ensure the pod is running with the default service account
          (or-join [?spec ?service-account-name]
                   (and
-                    [?spec :serviceAccountName "default"]
-                    [(ground "default") ?service-account-name])
+                   [?spec :serviceAccountName "default"]
+                   [(ground "default") ?service-account-name])
                   (and
-                    (not [?spec :serviceAccountName _])
-                    [(ground "default (implicit)") ?service-account-name]))
+                   (not [?spec :serviceAccountName _])
+                   [(ground "default (implicit)") ?service-account-name]))
          ;; get the pod configuration for the service account
          (or-join [?spec ?pod-automountServiceAccountToken]
                   ;; set
@@ -277,9 +277,9 @@
                   ;; not set
                   (and
                     ;(not [?spec :automountServiceAccountToken false])
-                    (safe-get ?spec :automountServiceAccountToken ?automount)
-                    [(= "Not set" ?automount)]
-                    [(ground "Not set") ?pod-automountServiceAccountToken]))
+                   (safe-get ?spec :automountServiceAccountToken ?automount)
+                   [(= "Not set" ?automount)]
+                   [(ground "Not set") ?pod-automountServiceAccountToken]))
          ;; Check the service account
          [?r :api_v1_serviceaccounts ?service-accounts]
          [?service-accounts :items ?sa]
@@ -292,16 +292,16 @@
                   [?sa :automountServiceAccountToken ?service-account-automountServiceAccountToken]
                   ;; not set
                   (and
-                    (not [?sa :automountServiceAccountToken false])
-                    [(ground "Not set") ?service-account-automountServiceAccountToken]))
+                   (not [?sa :automountServiceAccountToken false])
+                   [(ground "Not set") ?service-account-automountServiceAccountToken]))
          ;; evaluate the effective configuration
          (or-join [?pod-automountServiceAccountToken ?service-account-automountServiceAccountToken]
                   ;; The pod takes precedence
                   [(= true ?pod-automountServiceAccountToken)]
                   ;; If the pod specifies no value, it's mounted as long as the service account doesn't explicitly says otherwise
                   (and
-                    [(= "Not set" ?pod-automountServiceAccountToken)]
-                    [(not= false ?service-account-automountServiceAccountToken)]))]
+                   [(= "Not set" ?pod-automountServiceAccountToken)]
+                   [(not= false ?service-account-automountServiceAccountToken)]))]
        db rules))
 
 (defn container-missing-security-context
