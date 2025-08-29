@@ -1,0 +1,322 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: replik8s-test
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: replik8s-test-secure
+---
+# Service Accounts
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: test-sa
+  namespace: replik8s-test
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: secure-sa
+  namespace: replik8s-test-secure
+---
+# --- Insecure resources in replik8s-test namespace ---
+
+# Test case for:
+# - pods-host-network-true
+# - pods-host-ipc-true
+# - pods-host-pid-true
+apiVersion: v1
+kind: Pod
+metadata:
+  name: host-access-pod
+  namespace: replik8s-test
+spec:
+  hostNetwork: true
+  hostIPC: true
+  hostPID: true
+  containers:
+  - name: test-container
+    image: nginx
+---
+# Test case for:
+# - pods-with-hostpath-volume
+# - containers-with-sensitive-hostpath-mounts
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hostpath-pod
+  namespace: replik8s-test
+spec:
+  containers:
+  - name: test-container
+    image: nginx
+    volumeMounts:
+    - name: proc-mount
+      mountPath: /host/proc
+  volumes:
+  - name: proc-mount
+    hostPath:
+      path: /proc
+      type: Directory
+---
+# Test case for:
+# - pods-with-direct-env-vars
+apiVersion: v1
+kind: Pod
+metadata:
+  name: env-var-pod
+  namespace: replik8s-test
+spec:
+  containers:
+  - name: test-container
+    image: nginx
+    env:
+    - name: SECRET_KEY
+      value: "not-a-real-secret"
+---
+# Test case for:
+# - pods-with-default-service-account
+apiVersion: v1
+kind: Pod
+metadata:
+  name: default-sa-pod
+  namespace: replik8s-test
+spec:
+  serviceAccountName: default
+  containers:
+  - name: test-container
+    image: nginx
+---
+# Pod with insecure security context settings
+# Test case for:
+# - container-missing-security-context (missing-sc-container)
+# - containers-readonly-root-filesystem-false
+# - containers-allow-privilege-escalation-true
+# - containers-privileged-true
+# - containers-with-added-capabilities
+apiVersion: v1
+kind: Pod
+metadata:
+  name: security-context-pod
+  namespace: replik8s-test
+spec:
+  containers:
+  - name: missing-sc-container # This container has no SC, and the pod has no SC.
+    image: nginx
+  - name: insecure-sc-container
+    image: nginx
+    securityContext:
+      readOnlyRootFilesystem: false
+      allowPrivilegeEscalation: true
+      privileged: true
+      capabilities:
+        add: ["SYS_ADMIN"]
+---
+# --- Secure resources in replik8s-test-secure namespace (for false positive checks) ---
+
+# Secure pod - should not be flagged by any query
+apiVersion: v1
+kind: Pod
+metadata:
+  name: secure-pod
+  namespace: replik8s-test-secure
+spec:
+  serviceAccountName: secure-sa
+  containers:
+  - name: secure-container
+    image: nginx
+    securityContext:
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
+      privileged: false
+      runAsNonRoot: true
+      runAsUser: 1001
+      capabilities:
+        drop:
+        - ALL
+---
+# RBAC Test Cases
+
+# Test case for:
+# - rbac-full-permissions
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: full-permissions-role
+rules:
+- apiGroups: ["*"]
+  resources: ["*"]
+  verbs: ["*"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: full-permissions-binding
+subjects:
+- kind: ServiceAccount
+  name: test-sa
+  namespace: replik8s-test
+roleRef:
+  kind: ClusterRole
+  name: full-permissions-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# Test case for:
+# - rbac-sensitive-permissions
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: sensitive-role
+  namespace: replik8s-test
+rules:
+- apiGroups: [""]
+  resources: ["pods/exec"]
+  verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sensitive-binding
+  namespace: replik8s-test
+subjects:
+- kind: ServiceAccount
+  name: test-sa
+  namespace: replik8s-test
+roleRef:
+  kind: Role
+  name: sensitive-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# Non-sensitive role (negative test case)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: non-sensitive-role
+  namespace: replik8s-test
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: non-sensitive-binding
+  namespace: replik8s-test
+subjects:
+- kind: ServiceAccount
+  name: test-sa
+  namespace: replik8s-test
+roleRef:
+  kind: Role
+  name: non-sensitive-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# Test case for:
+# - rbac-special-principals-with-permissions
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: special-principal-binding
+subjects:
+- kind: Group
+  name: system:unauthenticated
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: view
+  apiGroup: rbac.authorization.k8s.io
+---
+# Test case for:
+# - rbac-default-service-account-permissions
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: default-sa-binding
+  namespace: replik8s-test
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: replik8s-test
+roleRef:
+  kind: Role
+  name: view
+  apiGroup: rbac.authorization.k8s.io
+---
+# Secure RBAC - should not be flagged
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: secure-role
+  namespace: replik8s-test-secure
+rules:
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: secure-binding
+  namespace: replik8s-test-secure
+subjects:
+- kind: ServiceAccount
+  name: secure-sa
+  namespace: replik8s-test-secure
+roleRef:
+  kind: Role
+  name: secure-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# Network Policy Test Cases
+
+# Test case for:
+# - netpol-allow-all-ingress
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-all-ingress
+  namespace: replik8s-test
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  ingress:
+  - {}
+---
+# Test case for:
+# - netpol-allow-all-egress
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-all-egress
+  namespace: replik8s-test
+spec:
+  podSelector: {}
+  policyTypes:
+  - Egress
+  egress:
+  - {}
+---
+# Secure Network Policies
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: replik8s-test-secure
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-egress
+  namespace: replik8s-test-secure
+spec:
+  podSelector: {}
+  policyTypes:
+  - Egress
