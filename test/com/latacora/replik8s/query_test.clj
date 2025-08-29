@@ -47,9 +47,9 @@
       (is (contains? pod-names "env-var-pod"))
       (is (not (contains? pod-names "secure-pod"))))))
 
-(deftest pods-with-default-service-account-test
+(deftest pods-with-service-account-token-mounted-and-default-sa-test
   (testing "Finds pods using the default service account"
-    (let [results (q/pods-with-default-service-account test-db)
+    (let [results (q/pods-with-service-account-token-mounted-and-default-sa test-db)
           pod-names (set (map :pod results))]
       (is (contains? pod-names "default-sa-pod"))
       (is (not (contains? pod-names "secure-pod"))))))

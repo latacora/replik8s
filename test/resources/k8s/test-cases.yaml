@@ -77,7 +77,7 @@ spec:
       value: "not-a-real-secret"
 ---
 # Test case for:
-# - pods-with-default-service-account
+# - /pods-with-service-account-token-mounted-and-default-sa
 apiVersion: v1
 kind: Pod
 metadata:
