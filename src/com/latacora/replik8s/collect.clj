@@ -2,6 +2,7 @@
   (:gen-class)
   (:require
    [clojure.data.json :as json]
+   [clojure.java.io :as io]
    [taoensso.timbre :as timbre])
   (:import
    (io.kubernetes.client.openapi ApiClient)
@@ -108,6 +109,13 @@
                    :timestamp (System/currentTimeMillis)}
         snapshot  {:metadata  metadata
                    :resources resources}]
+
+    ;; Ensure the output directory exists before writing the file.
+    (let [parent-dir (.getParentFile (io/file output-path))]
+      (when-not (.exists parent-dir)
+        (timbre/infof "Creating snapshot directory: %s" parent-dir)
+        (.mkdirs parent-dir)))
+
     (timbre/infof "Writing snapshot to %s" output-path)
     (spit output-path
           (with-out-str (json/pprint snapshot)))))
