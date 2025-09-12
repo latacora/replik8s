@@ -230,7 +230,7 @@
          results   (findings db)
          timestamp (get-timestamp)]
      (io/make-parents (str output-dir "/"))
-     (case format
+     (case (keyword format)
        :json
        (let [filename  (str "replik8s-report-" timestamp ".json")
              full-path (str output-dir "/" filename)

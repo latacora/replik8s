@@ -2,6 +2,7 @@
   (:gen-class)
   (:require
    [clojure.data.json :as json]
+   [clojure.java.io :as io]
    [clojure.string :as str]
    [com.latacora.replik8s.utils :as utils]
    [ring.adapter.jetty :refer [run-jetty]]
@@ -120,7 +121,14 @@
    (timbre/infof "Generating kubeconfig file for all snapshots in the \"%s\" directory" snapshot-directory)
    (utils/generate-kubeconfig-all-snapshots snapshot-directory "kubeconfig-all-snapshots.json")
    (timbre/infof "Serving %s" snapshot-directory)
-   (let [handler (create-handler snapshot-directory)]
+   (let [handler      (create-handler snapshot-directory)
+         ;; load from resources, copy to temp file so Jetty can read it
+         ;; used when running from a jar
+         keystore-url (io/resource "certificates/keystore.p12")
+         temp-keystore (java.io.File/createTempFile "keystore" ".p12")
+         _ (.deleteOnExit temp-keystore)
+         _ (when keystore-url (io/copy (io/input-stream keystore-url) temp-keystore))
+         keystore-temporary-path (.getAbsolutePath temp-keystore)]
      (when @server
        (timbre/info "Stopping existing server")
        (.stop @server))                                     ;; Stop the current server if running
@@ -130,7 +138,11 @@
                         {:port          3000
                          :ssl?          true
                          :ssl-port      3443
-                         :keystore      "resources/certificates/keystore.p12"
+                         :keystore      (if keystore-url
+                                          ;; run from jar
+                                          keystore-temporary-path
+                                          ;; run from source
+                                          "resources/certificates/keystore.p12")
                          :keystore-type "PKCS12"
                          :key-password  ""
                          :join?         false})))))

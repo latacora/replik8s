@@ -24,7 +24,7 @@
     :default "snapshots"]
    ["-f" "--format FORMAT" "Report format: json or xlsx"
     :parse-fn keyword
-    :default :xlsx]
+    :default "xlsx"]
    ["-o" "--output-dir OUTPUT_DIR" "Directory to save the report"
     :default "."]])
 

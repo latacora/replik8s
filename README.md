@@ -85,7 +85,7 @@ java -jar replik8s.jar report --format json
 ```
 
 This command supports the following options:
-- `--format`: The report format (`json` or `xlsx`). Defaults to `:xlsx`.
+- `--format`: The report format (`json` or `xlsx`). Defaults to `xlsx`.
 - `--snapshot-dir`: Directory of the snapshots to load. Defaults to `snapshots`.
 - `--output-dir`: The directory to save the report to. Defaults to the current directory.
 
