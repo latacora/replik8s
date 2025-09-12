@@ -1,13 +1,13 @@
 (ns com.latacora.replik8s.serve
   (:gen-class)
   (:require
-    [clojure.data.json :as json]
-    [clojure.java.io :as io]
-    [clojure.string :as str]
-    [com.latacora.replik8s.utils :as utils]
-    [ring.adapter.jetty :refer [run-jetty]]
-    [ring.middleware.gzip :refer [wrap-gzip]]
-    [taoensso.timbre :as timbre])
+   [clojure.data.json :as json]
+   [clojure.java.io :as io]
+   [clojure.string :as str]
+   [com.latacora.replik8s.utils :as utils]
+   [ring.adapter.jetty :refer [run-jetty]]
+   [ring.middleware.gzip :refer [wrap-gzip]]
+   [taoensso.timbre :as timbre])
   (:import (java.time LocalDateTime)))
 
 ;; Atom to hold the server instance
