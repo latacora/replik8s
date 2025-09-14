@@ -54,8 +54,8 @@
                              (map #(.getName %))
                              (filter #(clojure.string/starts-with? % "replik8s-snapshot-"))
                              (map #(str directory "/" %)))
-         snapshots      (reduce (fn [acc snapshot]
-                                  (assoc acc snapshot (load-snapshot snapshot)))
-                                {}
-                                snapshot-files)]
+         snapshots      (into {}
+                              (pmap (fn [snapshot]
+                                      [snapshot (load-snapshot snapshot)])
+                                    snapshot-files))]
      (make-db snapshots))))
