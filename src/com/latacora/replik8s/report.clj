@@ -197,13 +197,12 @@
 (defn findings
   "Runs all queries and returns a map of findings."
   [db]
-  (reduce-kv (fn [acc query-name {:keys [query-fn]}]
+  (->> findings-map
+       (pmap (fn [[query-name {:keys [query-fn]}]]
                (let [results (query-fn db)]
-                 (if (seq results)
-                   (assoc acc query-name (set results))
-                   acc)))
-             {}
-             findings-map))
+                 (when (seq results)
+                   [query-name (set results)]))))
+       (into {})))
 
 (defn- get-timestamp []
   (.format (LocalDateTime/now) (DateTimeFormatter/ofPattern "yyyy-MM-dd'_'HH:mm")))
