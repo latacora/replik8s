@@ -10,17 +10,17 @@
            (java.time.format DateTimeFormatter)))
 
 (def collect-cli-options
-  [["-d" "--snapshot-dir SNAPSHOPT_DIR" "Directory of the snapshots to load"
+  [["-d" "--snapshot-dir SNAPSHOT_DIR" "Directory of the snapshots to load"
     :default "snapshots"]
    ["-k" "--kubeconfig KUBECONFIG" "Optional path to the kubeconfig file"
     :default (str (io/file (System/getProperty "user.home") ".kube/config"))]])
 
 (def serve-cli-options
-  [["-d" "--snapshot-dir SNAPSHOPT_DIR" "Directory of the snapshots to load"
+  [["-d" "--snapshot-dir SNAPSHOT_DIR" "Directory of the snapshots to load"
     :default "snapshots"]])
 
 (def report-cli-options
-  [["-d" "--snapshot-dir SNAPSHOPT_DIR" "Directory of the snapshots to load"
+  [["-d" "--snapshot-dir SNAPSHOT_DIR" "Directory of the snapshots to load"
     :default "snapshots"]
    ["-f" "--format FORMAT" "Report format: json or xlsx"
     :parse-fn keyword
@@ -57,9 +57,10 @@
    "serve"     {:fn      serve
                 :desc    "Start the server."
                 :options serve-cli-options}
-   "report"    {:fn      report
-                :desc    "Generate findings."
-                :options report-cli-options}
+   "report"    {:fn                    report
+                :desc                  "Generate findings."
+                :options               report-cli-options
+                :shutdown-on-complete? true}
    "visualize" {:fn      visualize
                 :desc    "Visualize snapshot."
                 :options []}})
@@ -95,7 +96,10 @@
               (println "Errors:")
               (doseq [e errors] (println e)))
             (System/exit (if errors 1 0)))
-          ((:fn command) (:options parsed))))
+          (do
+            ((:fn command) (:options parsed))
+            (when (:shutdown-on-complete? command)
+              (shutdown-agents)))))
       (do (usage)
           (System/exit 1)))))
 
@@ -104,7 +108,8 @@
 
 (comment
 
-  (collect {:snapshot-dir "snapshots"})
+  (collect {:kubeconfig "/home/user/.kube/config"
+            :snapshot-dir "snapshots"})
 
   (serve {:snapshot-dir "snapshots"})
 

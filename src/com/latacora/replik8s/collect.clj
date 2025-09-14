@@ -117,8 +117,7 @@
         (.mkdirs parent-dir)))
 
     (timbre/infof "Writing snapshot to %s" output-path)
-    (spit output-path
-          (with-out-str (json/pprint snapshot)))))
+    (spit output-path (json/write-str snapshot))))
 
 (comment
   (generate-snapshot "/home/user/.kube/config" "snapshots/test_snapshot.json"))
