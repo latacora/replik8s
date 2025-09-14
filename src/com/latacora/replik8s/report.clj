@@ -233,13 +233,13 @@
        :json
        (let [filename  (str "replik8s-report-" timestamp ".json")
              full-path (str output-dir "/" filename)
-             json-data (reduce-kv (fn [m check-name check-results]
-                                    (assoc m check-name {:title       (get-in findings-map [check-name :title])
-                                                         :description (get-in findings-map [check-name :description])
-                                                         :severity    (get-in findings-map [check-name :severity])
-                                                         :items       check-results}))
-                                  {}
-                                  results)]
+             json-data (->> results
+                                  (pmap (fn [[check-name check-results]]
+                                          [check-name {:title       (get-in findings-map [check-name :title])
+                                                       :description (get-in findings-map [check-name :description])
+                                                       :severity    (get-in findings-map [check-name :severity])
+                                                       :items       check-results}]))
+                                  (into {}))]
          (spit full-path (json/write-str json-data {:pretty true}))
          (timbre/infof "JSON report generated at %s" full-path))
 
@@ -263,16 +263,21 @@
            (spreadsheet/auto-size-all-columns! sheet))
 
          ;; Create and style detail sheets for each finding.
-         (doseq [[idx check-name] (map-indexed vector sorted-check-names)]
-           (let [finding-num-str (str (inc idx))
-                 {:keys [headers]} (get findings-map check-name)
-                 check-results   (get results check-name)
-                 rows            (map #(result->row % headers) check-results)
-                 sheet-data      (cons headers rows)
-                 sheet           (spreadsheet/add-sheet! workbook finding-num-str)]
-             (spreadsheet/add-rows! sheet sheet-data)
-             (spreadsheet/set-row-style! (first (spreadsheet/row-seq sheet)) bold-style)
-             (spreadsheet/auto-size-all-columns! sheet)))
+         (let [sheet-details (pmap
+                               (fn [[idx check-name]]
+                                 (let [finding-num-str (str (inc idx))
+                                       {:keys [headers]} (get findings-map check-name)
+                                       check-results   (get results check-name)
+                                       rows            (map #(result->row % headers) check-results)
+                                       sheet-data      (cons headers rows)]
+                                   {:sheet-name finding-num-str
+                                    :sheet-data sheet-data}))
+                               (map-indexed vector sorted-check-names))]
+           (doseq [{:keys [sheet-name sheet-data]} sheet-details]
+             (let [sheet (spreadsheet/add-sheet! workbook sheet-name)]
+               (spreadsheet/add-rows! sheet sheet-data)
+               (spreadsheet/set-row-style! (first (spreadsheet/row-seq sheet)) bold-style)
+               (spreadsheet/auto-size-all-columns! sheet))))
 
          (spreadsheet/save-workbook! full-path workbook)
          (timbre/infof "Spreadsheet report generated at %s" full-path)))
