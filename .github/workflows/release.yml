@@ -1,0 +1,49 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'VERSION'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: corretto
+          java-version: 21
+
+      - name: Cache Clojure deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gitlibs
+            ~/.m2/repository
+          key: ${{ runner.os }}-deps-${{ hashFiles('''deps.edn''') }}
+          restore-keys: |
+            ${{ runner.os }}-deps-
+
+      - name: Install clojure tools
+        uses: DeLaGuardo/setup-clojure@13.4
+        with:
+          cli: latest
+
+      - name: Build JAR
+        run: clojure -T:build uber
+
+      - name: Read version
+        id: version
+        run: echo "version=$(cat VERSION)" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2.3.3
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          files: replik8s.jar
