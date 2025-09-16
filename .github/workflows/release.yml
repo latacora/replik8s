@@ -21,12 +21,12 @@ jobs:
           java-version: 21
 
       - name: Cache Clojure deps
-        uses: actions/cache@v4
+        uses: actions/cache@v4.2.4
         with:
           path: |
             ~/.gitlibs
             ~/.m2/repository
-          key: ${{ runner.os }}-deps-${{ hashFiles('''deps.edn''') }}
+          key: ${{ runner.os }}-deps-${{ hashFiles('deps.edn') }}
           restore-keys: |
             ${{ runner.os }}-deps-
 
