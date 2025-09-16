@@ -12,7 +12,7 @@
          org.apache.logging.log4j/log4j-core  {:mvn/version "2.25.1"}
          ;; k8s
          io.fabric8/kubernetes-client {:mvn/version "7.4.0"}
-         io.kubernetes/client-java    {:mvn/version "24.0.0-legacy"}
+         io.kubernetes/client-java    {:mvn/version "23.0.0"}
          clj-http/clj-http            {:mvn/version "3.13.1"}
          ;; spreadsheet
          dk.ative/docjure             {:mvn/version "1.21.0"}
