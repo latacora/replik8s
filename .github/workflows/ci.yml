@@ -7,16 +7,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Java
-        uses: actions/setup-java@v4.7.1
+        uses: actions/setup-java@v5
         with:
           distribution: corretto
           java-version: 21
 
       - name: Cache Clojure deps
-        uses: actions/cache@v4
+        uses: actions/cache@v4.2.4
         with:
           path: |
             ~/.gitlibs
