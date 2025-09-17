@@ -135,17 +135,18 @@
      (timbre/info "Starting new server on ports 3000 (HTTP) and 3443 (HTTPS)")
      (reset! server
              (run-jetty handler
-                        {:port          3000
-                         :ssl?          true
-                         :ssl-port      3443
-                         :keystore      (if keystore-url
-                                          ;; run from jar
-                                          keystore-temporary-path
-                                          ;; run from source
-                                          "resources/certificates/keystore.p12")
-                         :keystore-type "PKCS12"
-                         :key-password  ""
-                         :join?         false})))))
+                        {:port            3000
+                         :ssl?            true
+                         :ssl-port        3443
+                         :keystore        (if keystore-url
+                                            ;; run from jar
+                                            keystore-temporary-path
+                                            ;; run from source
+                                            "resources/certificates/keystore.p12")
+                         :keystore-type   "PKCS12"
+                         :key-password    ""
+                         :join?           false
+                         :sni-host-check? false})))))
 
 (comment
   (start-server))
